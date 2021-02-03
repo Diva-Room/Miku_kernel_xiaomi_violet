@@ -721,7 +721,141 @@ err:
 	return result;
 }
 
+<<<<<<< HEAD
 int incfs_link(struct dentry *what, struct dentry *where)
+=======
+static char *file_id_to_str(incfs_uuid_t id)
+{
+	char *result = kmalloc(1 + sizeof(id.bytes) * 2, GFP_NOFS);
+	char *end;
+
+	if (!result)
+		return NULL;
+
+	end = bin2hex(result, id.bytes, sizeof(id.bytes));
+	*end = 0;
+	return result;
+}
+
+static struct mem_range incfs_copy_signature_info_from_user(u8 __user *original,
+							    u64 size)
+{
+	u8 *result;
+
+	if (!original)
+		return range(NULL, 0);
+
+	if (size > INCFS_MAX_SIGNATURE_SIZE)
+		return range(ERR_PTR(-EFAULT), 0);
+
+	result = kzalloc(size, GFP_NOFS | __GFP_COMP);
+	if (!result)
+		return range(ERR_PTR(-ENOMEM), 0);
+
+	if (copy_from_user(result, original, size)) {
+		kfree(result);
+		return range(ERR_PTR(-EFAULT), 0);
+	}
+
+	return range(result, size);
+}
+
+static int init_new_file(struct mount_info *mi, struct dentry *dentry,
+			 incfs_uuid_t *uuid, u64 size, struct mem_range attr,
+			 u8 __user *user_signature_info, u64 signature_size)
+{
+	struct path path = {};
+	struct file *new_file;
+	int error = 0;
+	struct backing_file_context *bfc = NULL;
+	u32 block_count;
+	struct mem_range raw_signature = { NULL };
+	struct mtree *hash_tree = NULL;
+
+	if (!mi || !dentry || !uuid)
+		return -EFAULT;
+
+	/* Resize newly created file to its true size. */
+	path = (struct path) {
+		.mnt = mi->mi_backing_dir_path.mnt,
+		.dentry = dentry
+	};
+	new_file = dentry_open(&path, O_RDWR | O_NOATIME | O_LARGEFILE,
+			       current_cred());
+
+	if (IS_ERR(new_file)) {
+		error = PTR_ERR(new_file);
+		goto out;
+	}
+
+	bfc = incfs_alloc_bfc(mi, new_file);
+	fput(new_file);
+	if (IS_ERR(bfc)) {
+		error = PTR_ERR(bfc);
+		bfc = NULL;
+		goto out;
+	}
+
+	mutex_lock(&bfc->bc_mutex);
+	error = incfs_write_fh_to_backing_file(bfc, uuid, size);
+	if (error)
+		goto out;
+
+	if (attr.data && attr.len) {
+		error = incfs_write_file_attr_to_backing_file(bfc,
+							attr, NULL);
+		if (error)
+			goto out;
+	}
+
+	block_count = (u32)get_blocks_count_for_size(size);
+
+	if (user_signature_info) {
+		raw_signature = incfs_copy_signature_info_from_user(
+			user_signature_info, signature_size);
+
+		if (IS_ERR(raw_signature.data)) {
+			error = PTR_ERR(raw_signature.data);
+			raw_signature.data = NULL;
+			goto out;
+		}
+
+		hash_tree = incfs_alloc_mtree(raw_signature, block_count);
+		if (IS_ERR(hash_tree)) {
+			error = PTR_ERR(hash_tree);
+			hash_tree = NULL;
+			goto out;
+		}
+
+		error = incfs_write_signature_to_backing_file(
+			bfc, raw_signature, hash_tree->hash_tree_area_size);
+		if (error)
+			goto out;
+
+		block_count += get_blocks_count_for_size(
+			hash_tree->hash_tree_area_size);
+	}
+
+	if (block_count)
+		error = incfs_write_blockmap_to_backing_file(bfc, block_count);
+
+	if (error)
+		goto out;
+out:
+	if (bfc) {
+		mutex_unlock(&bfc->bc_mutex);
+		incfs_free_bfc(bfc);
+	}
+	incfs_free_mtree(hash_tree);
+	kfree(raw_signature.data);
+
+	if (error)
+		pr_debug("incfs: %s error: %d\n", __func__, error);
+	return error;
+}
+
+static int incfs_link(struct dentry *what, struct dentry *where)
+>>>>>>> 76f269c646db... ANDROID: Incremental fs: Set credentials before reading/writing
 {
 	struct dentry *parent_dentry = dget_parent(where);
 	struct inode *pinode = d_inode(parent_dentry);
@@ -765,6 +899,7 @@ static int incfs_rmdir(struct dentry *dentry)
 
 static void maybe_delete_incomplete_file(struct data_file *df)
 {
+<<<<<<< HEAD
 	char *file_id_str;
 	struct dentry *incomplete_file_dentry;
 
@@ -781,6 +916,20 @@ static void maybe_delete_incomplete_file(struct data_file *df)
 					file_id_str);
 	if (!incomplete_file_dentry || IS_ERR(incomplete_file_dentry)) {
 		incomplete_file_dentry = NULL;
+=======
+	struct path *base_path = &mi->mi_backing_dir_path;
+	int dir_fd = get_unused_fd_flags(0);
+	struct file *dir_f = NULL;
+	int error = 0;
+
+	if (dir_fd < 0)
+		return dir_fd;
+
+	dir_f = dentry_open(base_path, O_RDONLY | O_NOATIME, current_cred());
+
+	if (IS_ERR(dir_f)) {
+		error = PTR_ERR(dir_f);
+>>>>>>> 76f269c646db... ANDROID: Incremental fs: Set credentials before reading/writing
 		goto out;
 	}
 
@@ -1445,6 +1594,7 @@ static int file_open(struct inode *inode, struct file *file)
 	struct file *backing_file = NULL;
 	struct path backing_path = {};
 	int err = 0;
+<<<<<<< HEAD
 	int flags = O_NOATIME | O_LARGEFILE |
 		(S_ISDIR(inode->i_mode) ? O_RDONLY : O_RDWR);
 
@@ -1458,6 +1608,15 @@ static int file_open(struct inode *inode, struct file *file)
 		return -EBADF;
 
 	backing_file = dentry_open(&backing_path, flags, mi->mi_owner);
+=======
+	const struct cred *old_cred;
+
+	get_incfs_backing_path(file->f_path.dentry, &backing_path);
+	old_cred = override_creds(mi->mi_owner);
+	backing_file = dentry_open(&backing_path,
+			O_RDWR | O_NOATIME | O_LARGEFILE, current_cred());
+	revert_creds(old_cred);
+>>>>>>> 76f269c646db... ANDROID: Incremental fs: Set credentials before reading/writing
 	path_put(&backing_path);
 
 	if (IS_ERR(backing_file)) {
