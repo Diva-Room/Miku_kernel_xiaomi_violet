@@ -2394,11 +2394,18 @@ static int fastrpc_kstat(const char *filename, struct kstat *stat)
 }
 
 static int fastrpc_get_info_from_dsp(struct fastrpc_file *fl,
+<<<<<<< HEAD
 				uint32_t *dsp_attr_buf,
 				uint32_t dsp_attr_buf_len,
 				uint32_t domain)
 {
 	int err = 0, dsp_support = 0;
+=======
+				uint32_t *dsp_attr, uint32_t dsp_attr_size,
+				uint32_t domain)
+{
+	int err = 0, dsp_cap_buff_size, dsp_support = 0;
+>>>>>>> 0864fe8d7771... msm: adsprpc: API to get DSP capability
 	struct fastrpc_ioctl_invoke_crc ioctl;
 	remote_arg_t ra[2];
 	struct kstat sb;
@@ -2424,7 +2431,11 @@ static int fastrpc_get_info_from_dsp(struct fastrpc_file *fl,
 		dsp_support = 0;
 		break;
 	}
+<<<<<<< HEAD
 	dsp_attr_buf[0] = dsp_support;
+=======
+	dsp_attr[0] = dsp_support;
+>>>>>>> 0864fe8d7771... msm: adsprpc: API to get DSP capability
 
 	if (dsp_support == 0)
 		goto bail;
@@ -2433,10 +2444,18 @@ static int fastrpc_get_info_from_dsp(struct fastrpc_file *fl,
 	if (err)
 		goto bail;
 
+<<<<<<< HEAD
 	ra[0].buf.pv = (void *)&dsp_attr_buf_len;
 	ra[0].buf.len = sizeof(dsp_attr_buf_len);
 	ra[1].buf.pv = (void *)(&dsp_attr_buf[1]);
 	ra[1].buf.len = dsp_attr_buf_len * sizeof(uint32_t);
+=======
+	dsp_cap_buff_size = dsp_attr_size - sizeof(uint32_t);
+	ra[0].buf.pv = (void *)&dsp_cap_buff_size;
+	ra[0].buf.len = sizeof(dsp_cap_buff_size);
+	ra[1].buf.pv = (void *)(&dsp_attr[1]);
+	ra[1].buf.len = dsp_cap_buff_size * sizeof(uint32_t);
+>>>>>>> 0864fe8d7771... msm: adsprpc: API to get DSP capability
 	ioctl.inv.handle = FASTRPC_STATIC_HANDLE_DSP_UTILITIES;
 	ioctl.inv.sc = REMOTE_SCALARS_MAKE(0, 1, 1);
 	ioctl.inv.pra = ra;
@@ -2468,7 +2487,11 @@ static int fastrpc_get_info_from_kernel(
 		 * and cache on kernel
 		 */
 		err = fastrpc_get_info_from_dsp(fl, dsp_cap->dsp_attributes,
+<<<<<<< HEAD
 				FASTRPC_MAX_DSP_ATTRIBUTES - 1,
+=======
+				sizeof(dsp_cap->dsp_attributes),
+>>>>>>> 0864fe8d7771... msm: adsprpc: API to get DSP capability
 				domain);
 		if (err)
 			goto bail;
