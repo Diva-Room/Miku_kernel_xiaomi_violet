@@ -1007,9 +1007,9 @@ static int sugov_init(struct cpufreq_policy *policy)
 	tunables->hispeed_load = DEFAULT_HISPEED_LOAD;
 	tunables->hispeed_freq = 0;
 	tunables->up_rate_limit_us =
-				cpufreq_policy_transition_delay_us(policy);
+				CONFIG_SCHEDUTIL_UP_RATE_LIMIT;
 	tunables->down_rate_limit_us =
-				cpufreq_policy_transition_delay_us(policy);
+				CONFIG_SCHEDUTIL_DOWN_RATE_LIMIT;
 
 	tunables->iowait_boost_enable = false;
 
