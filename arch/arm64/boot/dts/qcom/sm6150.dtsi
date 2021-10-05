@@ -394,14 +394,16 @@
 				300000	180
 				652800	236
 				768000	273
-				979200  352
-				1017600 360
-				1209600 409
-				1363200 489
-				1516800 570
-				1708800 749
-				1900800 835
-				2016000 938
+				979200  446
+				1017600 462
+				1209600 662
+				1363200 894
+				1516800 989
+				1708800 1276
+				1900800 1652
+				2016000 2040
+				2112000 2242
+				2208000 2713
 			>;
 			idle-cost-data = <
 				100 80 60 40
@@ -3245,47 +3247,4 @@
 
 &msm_audio_ion {
 	qcom,iova-start-addr = <0x20000000>;
-};
-
-&soc {
-	qcom,msm-thermal-simple {
-		compatible = "qcom,msm-thermal-simple";
-		qcom,poll-ms = <3000>;
-		qcom,start-delay = <5>;
-
-		zone@0 {
-			reg = <0>;
-			qcom,silver-khz = <1804800>;
-			qcom,gold-khz = <2304000>;
-			qcom,trip-deg = <65000>;
-		};
-
-		zone@1 {
-			reg = <1>;
-			qcom,silver-khz = <1804800>;
-			qcom,gold-khz = <2169600>;
-			qcom,trip-deg = <70000>;
-		};
-
-		zone@2 {
-			reg = <2>;
-			qcom,silver-khz = <1804800>;
-			qcom,gold-khz = <1843200>;
-			qcom,trip-deg = <72000>;
-		};
-
-		zone@3 {
-			reg = <3>;
-			qcom,silver-khz = <1708800>;
-			qcom,gold-khz = <1843200>;
-			qcom,trip-deg = <74000>;
-		};
-
-		zone@4 {
-			reg = <4>;
-			qcom,silver-khz = <1708800>;
-			qcom,gold-khz = <1555200>;
-			qcom,trip-deg = <82000>;
-		};
-	};
 };
