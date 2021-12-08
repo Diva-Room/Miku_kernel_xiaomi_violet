@@ -13,15 +13,11 @@
 # Ensure linker flags are correct
 LDFLAGS		:=
 
-<<<<<<< HEAD
 ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
 export DTC_FLAGS := -@
 endif
 
 LDFLAGS_vmlinux	:=-p --no-undefined -X --pic-veneer
-=======
-LDFLAGS_vmlinux	:= --no-undefined -X --pic-veneer
->>>>>>> 1f66b391c76e... ARM: 8819/1: Remove '-p' from LDFLAGS
 ifeq ($(CONFIG_CPU_ENDIAN_BE8),y)
 LDFLAGS_vmlinux	+= --be8
 LDFLAGS_MODULE	+= --be8
