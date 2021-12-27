@@ -1176,5 +1176,7 @@ config VLA_ERROR_ON_DETECT
 
 endchoice
 
+config ARCH_USE_MEMREMAP_PROT
+	bool
 
 source "kernel/gcov/Kconfig"
